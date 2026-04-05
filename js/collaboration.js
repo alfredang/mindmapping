@@ -16,13 +16,13 @@
 const Collaboration = (() => {
   // ===== PASTE YOUR FIREBASE CONFIG HERE =====
   const FIREBASE_CONFIG = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
+    apiKey: "AIzaSyAsGQa-Q54Myh9ZQ2ButUIaTemJVdhLFEE",
+    authDomain: "mindmapping-f9d6b.firebaseapp.com",
+    databaseURL: "https://mindmapping-f9d6b-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "mindmapping-f9d6b",
+    storageBucket: "mindmapping-f9d6b.firebasestorage.app",
+    messagingSenderId: "399212343345",
+    appId: "1:399212343345:web:53225f0bbeacb72800a510",
   };
   // ============================================
 
