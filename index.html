@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindFlow — Collaborative Mind Mapping</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDK (compat for vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <!-- QR Code generation -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <!-- PNG export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== LANDING SCREEN ===== -->
+  <div id="landing-screen" class="screen active">
+    <div class="landing-container">
+      <div class="landing-header">
+        <div class="logo">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="8" fill="var(--accent)"/>
+            <circle cx="8" cy="12" r="4" fill="var(--accent-secondary)"/>
+            <circle cx="32" cy="12" r="4" fill="var(--accent-secondary)"/>
+            <circle cx="8" cy="28" r="4" fill="var(--accent-secondary)"/>
+            <circle cx="32" cy="28" r="4" fill="var(--accent-secondary)"/>
+            <line x1="16" y1="16" x2="10" y2="13" stroke="var(--accent-secondary)" stroke-width="1.5"/>
+            <line x1="24" y1="16" x2="30" y2="13" stroke="var(--accent-secondary)" stroke-width="1.5"/>
+            <line x1="16" y1="24" x2="10" y2="27" stroke="var(--accent-secondary)" stroke-width="1.5"/>
+            <line x1="24" y1="24" x2="30" y2="27" stroke="var(--accent-secondary)" stroke-width="1.5"/>
+          </svg>
+          <h1>MindFlow</h1>
+        </div>
+        <p class="tagline">Collaborative mind mapping for teams, classrooms, and workshops</p>
+      </div>
+
+      <div class="landing-cards">
+        <!-- Create New -->
+        <div class="landing-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </div>
+          <h2>Create New Mind Map</h2>
+          <p>Start a fresh collaborative brainstorming session</p>
+          <input type="text" id="new-map-name" placeholder="Mind map name (optional)" maxlength="50">
+          <button id="btn-create" class="btn btn-primary">Create Session</button>
+        </div>
+
+        <!-- Join Existing -->
+        <div class="landing-card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <h2>Join a Session</h2>
+          <p>Enter a room code to collaborate with others</p>
+          <input type="text" id="join-room-code" placeholder="Enter room code" maxlength="6" spellcheck="false">
+          <button id="btn-join" class="btn btn-secondary">Join Room</button>
+        </div>
+      </div>
+
+      <div class="landing-footer">
+        <button id="btn-offline" class="btn btn-ghost">Work Offline (No Collaboration)</button>
+        <p class="powered-by">Powered by <a href="https://www.tertiarycourses.com.sg/" target="_blank" rel="noopener noreferrer">Tertiary Infotech Academy Pte Ltd</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CANVAS WORKSPACE ===== -->
+  <div id="workspace-screen" class="screen">
+
+    <!-- Top Bar -->
+    <header id="topbar">
+      <div class="topbar-left">
+        <button id="btn-home" class="icon-btn" title="Back to Home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <div class="topbar-title">
+          <span id="map-name">Untitled Mind Map</span>
+          <span id="room-badge" class="badge hidden"></span>
+        </div>
+      </div>
+      <div class="topbar-center">
+        <div id="collab-status" class="collab-status hidden">
+          <span class="status-dot"></span>
+          <span id="online-count">1 online</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button id="btn-search" class="icon-btn" title="Search Nodes (Ctrl+F)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+        <button id="btn-share" class="icon-btn" title="Share / QR Code">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+        <div class="dropdown" id="export-dropdown">
+          <button id="btn-export" class="icon-btn" title="Export">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu">
+            <button id="btn-export-png">Export as PNG</button>
+            <button id="btn-export-json">Export as JSON</button>
+            <button id="btn-import-json">Import JSON</button>
+          </div>
+        </div>
+        <button id="btn-theme" class="icon-btn" title="Toggle Theme">
+          <svg id="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg id="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="hidden">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating Toolbar -->
+    <div id="toolbar">
+      <div class="toolbar-group">
+        <button id="tool-add-child" class="tool-btn" title="Add Child Node (Enter)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          <span>Child</span>
+        </button>
+        <button id="tool-add-sibling" class="tool-btn" title="Add Sibling Node (Tab)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            <line x1="10" y1="6.5" x2="14" y2="6.5"/><line x1="10" y1="17.5" x2="14" y2="17.5"/>
+          </svg>
+          <span>Sibling</span>
+        </button>
+        <button id="tool-delete" class="tool-btn" title="Delete Node (Del)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <span>Delete</span>
+        </button>
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <div class="color-picker-wrap">
+          <button id="tool-color" class="tool-btn" title="Node Color">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="var(--accent)"/>
+            </svg>
+            <span>Color</span>
+          </button>
+          <div id="color-palette" class="color-palette hidden">
+            <button class="color-swatch" data-color="#6366f1" style="background:#6366f1" title="Indigo"></button>
+            <button class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6" title="Violet"></button>
+            <button class="color-swatch" data-color="#ec4899" style="background:#ec4899" title="Pink"></button>
+            <button class="color-swatch" data-color="#ef4444" style="background:#ef4444" title="Red"></button>
+            <button class="color-swatch" data-color="#f97316" style="background:#f97316" title="Orange"></button>
+            <button class="color-swatch" data-color="#eab308" style="background:#eab308" title="Yellow"></button>
+            <button class="color-swatch" data-color="#22c55e" style="background:#22c55e" title="Green"></button>
+            <button class="color-swatch" data-color="#06b6d4" style="background:#06b6d4" title="Cyan"></button>
+            <button class="color-swatch" data-color="#3b82f6" style="background:#3b82f6" title="Blue"></button>
+            <button class="color-swatch" data-color="#64748b" style="background:#64748b" title="Slate"></button>
+          </div>
+        </div>
+        <div class="shape-picker-wrap">
+          <button id="tool-shape" class="tool-btn" title="Node Shape">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="3" width="18" height="18" rx="4"/>
+            </svg>
+            <span>Shape</span>
+          </button>
+          <div id="shape-palette" class="shape-palette hidden">
+            <button class="shape-option" data-shape="rounded" title="Rounded Rectangle">
+              <svg width="32" height="20" viewBox="0 0 32 20"><rect x="1" y="1" width="30" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <button class="shape-option" data-shape="pill" title="Pill">
+              <svg width="32" height="20" viewBox="0 0 32 20"><rect x="1" y="1" width="30" height="18" rx="9" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <button class="shape-option" data-shape="rectangle" title="Rectangle">
+              <svg width="32" height="20" viewBox="0 0 32 20"><rect x="1" y="1" width="30" height="18" rx="0" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <button class="shape-option" data-shape="diamond" title="Diamond">
+              <svg width="32" height="24" viewBox="0 0 32 24"><polygon points="16,1 31,12 16,23 1,12" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+          </div>
+        </div>
+        <button id="tool-emoji" class="tool-btn" title="Add Emoji">
+          <span style="font-size:16px">😊</span>
+          <span>Emoji</span>
+        </button>
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <button id="tool-undo" class="tool-btn" title="Undo (Ctrl+Z)" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+          </svg>
+        </button>
+        <button id="tool-redo" class="tool-btn" title="Redo (Ctrl+Y)" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/>
+          </svg>
+        </button>
+      </div>
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-group">
+        <button id="tool-zoom-in" class="tool-btn" title="Zoom In">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+        <span id="zoom-level" class="zoom-level">100%</span>
+        <button id="tool-zoom-out" class="tool-btn" title="Zoom Out">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </button>
+        <button id="tool-fit" class="tool-btn" title="Fit View">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+            <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+          </svg>
+        </button>
+        <button id="tool-layout" class="tool-btn" title="Auto Layout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas Viewport -->
+    <div id="canvas-viewport">
+      <div id="canvas-world">
+        <svg id="connections-layer"></svg>
+        <div id="nodes-layer"></div>
+      </div>
+    </div>
+
+    <!-- Minimap -->
+    <div id="minimap">
+      <canvas id="minimap-canvas" width="180" height="120"></canvas>
+      <div id="minimap-viewport-rect"></div>
+    </div>
+
+    <!-- Search Overlay -->
+    <div id="search-overlay" class="hidden">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search nodes...">
+        <span id="search-count"></span>
+        <button id="search-close" class="icon-btn-sm">&times;</button>
+      </div>
+      <div id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- ===== SHARE MODAL ===== -->
+  <div id="share-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Share Mind Map</h3>
+        <button class="modal-close icon-btn-sm">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="share-section">
+          <label>Room Code</label>
+          <div class="copy-row">
+            <input type="text" id="share-room-code" readonly>
+            <button id="btn-copy-code" class="btn btn-small">Copy</button>
+          </div>
+        </div>
+        <div class="share-section">
+          <label>Share Link</label>
+          <div class="copy-row">
+            <input type="text" id="share-link" readonly>
+            <button id="btn-copy-link" class="btn btn-small">Copy</button>
+          </div>
+        </div>
+        <div class="share-section qr-section">
+          <label>QR Code</label>
+          <div id="qr-code"></div>
+          <p class="hint">Scan to join on another device</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EMOJI PICKER MODAL ===== -->
+  <div id="emoji-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content modal-sm">
+      <div class="modal-header">
+        <h3>Pick an Emoji</h3>
+        <button class="modal-close icon-btn-sm">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="emoji-grid" class="emoji-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden file input for JSON import -->
+  <input type="file" id="import-file-input" accept=".json" class="hidden">
+
+  <!-- Scripts (order matters) -->
+  <script src="js/utils.js"></script>
+  <script src="js/mindmap.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/collaboration.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
