@@ -248,8 +248,12 @@ const MindMap = (() => {
     Utils.bus.emit('tree:layoutChanged');
   }
 
-  // Set a single node from external data (for Firebase sync)
+  // Set a single node from external data (for Firebase sync).
+  // Firebase strips empty arrays, so we must ensure children is always an array.
   function setNode(id, nodeData) {
+    nodeData.children = nodeData.children || [];
+    nodeData.collapsed = nodeData.collapsed || false;
+    nodeData.emoji = nodeData.emoji || null;
     nodes[id] = nodeData;
     if (!nodeData.parentId) rootId = id;
   }

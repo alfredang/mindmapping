@@ -193,10 +193,13 @@ const Collaboration = (() => {
       }
     });
 
-    // Node changed
+    // Node changed — only apply if the remote data is newer than local
     const onChanged = nodesRef.on('child_changed', (snap) => {
       const nodeData = snap.val();
       if (!nodeData) return;
+      const local = MindMap.getNode(nodeData.id);
+      // Skip if local version is same or newer (echo of our own write)
+      if (local && local.updatedAt >= nodeData.updatedAt) return;
       MindMap.setNode(nodeData.id, nodeData);
       Utils.bus.emit('collab:nodeChanged', nodeData);
     });

@@ -257,32 +257,6 @@
       </div>
     </div>
 
-    <!-- QR Code Sidebar Panel (visible during collaboration) -->
-    <div id="qr-panel" class="hidden">
-      <div class="qr-panel-header">
-        <h4>Share Session</h4>
-        <button id="qr-panel-close" class="icon-btn-sm" onclick="document.getElementById('qr-panel').classList.add('hidden')">&times;</button>
-      </div>
-      <div class="qr-panel-qr-wrap">
-        <div id="qr-panel-qr"></div>
-      </div>
-      <p class="qr-panel-hint">Scan to join on any device</p>
-      <div class="qr-panel-info">
-        <label>Room Code</label>
-        <div class="qr-panel-code-row">
-          <span id="qr-panel-code" class="qr-panel-code-text"></span>
-          <button id="qr-panel-copy-code" class="btn-small">Copy</button>
-        </div>
-      </div>
-      <div class="qr-panel-info">
-        <label>Link</label>
-        <div class="qr-panel-code-row">
-          <input type="text" id="qr-panel-link" class="qr-panel-link-input" readonly>
-          <button id="qr-panel-copy-link" class="btn-small">Copy</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Minimap -->
     <div id="minimap">
       <canvas id="minimap-canvas" width="180" height="120"></canvas>
