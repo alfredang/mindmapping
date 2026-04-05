@@ -484,16 +484,10 @@ const Renderer = (() => {
   // ===== SVG CONNECTIONS =====
 
   function drawAllConnections() {
-    connectionsLayer.innerHTML = '';
-
-    // Add SVG defs for arrow markers
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    defs.innerHTML = `
-      <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
-        <polygon points="0 0, 10 4, 0 8" fill="var(--connection-color)" />
-      </marker>
-    `;
-    connectionsLayer.appendChild(defs);
+    // Remove all children reliably (innerHTML on SVG can leave artifacts)
+    while (connectionsLayer.firstChild) {
+      connectionsLayer.removeChild(connectionsLayer.firstChild);
+    }
 
     const allNodes = MindMap.getAllNodes();
 
@@ -522,38 +516,62 @@ const Renderer = (() => {
     const x2 = child.x;
     const y2 = child.y + ch / 2;
 
-    // Use CSS variable for connection color (white in dark mode, dark in light)
-    // Draw the curved path
-    const path = document.createElementNS(SVG_NS, 'path');
-    path.id = `conn-${parent.id}-${child.id}`;
-
+    const connId = `conn-${parent.id}-${child.id}`;
+    const arrowId = `arrow-${parent.id}-${child.id}`;
     const cx = (x1 + x2) / 2;
-    path.setAttribute('d', `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke-linecap', 'round');
+    const d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+
+    // Reuse existing path or create new one
+    let path = connectionsLayer.querySelector(`#${CSS.escape(connId)}`);
+    if (!path) {
+      path = document.createElementNS(SVG_NS, 'path');
+      path.id = connId;
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      connectionsLayer.appendChild(path);
+    }
+    path.setAttribute('d', d);
 
     // Highlight if selected
     if (child.id === selectedNodeId || parent.id === selectedNodeId) {
       path.classList.add('highlight');
+    } else {
+      path.classList.remove('highlight');
     }
 
-    connectionsLayer.appendChild(path);
-
-    // Draw arrowhead as a small triangle at the end
+    // Reuse existing arrow or create new one
     const arrowSize = 8;
     const ax = x2 - arrowSize;
     const ay1 = y2 - arrowSize * 0.6;
     const ay2 = y2 + arrowSize * 0.6;
 
-    const arrow = document.createElementNS(SVG_NS, 'polygon');
-    arrow.id = `arrow-${parent.id}-${child.id}`;
+    let arrow = connectionsLayer.querySelector(`#${CSS.escape(arrowId)}`);
+    if (!arrow) {
+      arrow = document.createElementNS(SVG_NS, 'polygon');
+      arrow.id = arrowId;
+      arrow.setAttribute('class', 'arrow-marker');
+      connectionsLayer.appendChild(arrow);
+    }
     arrow.setAttribute('points', `${x2},${y2} ${ax},${ay1} ${ax},${ay2}`);
-    arrow.setAttribute('class', 'arrow-marker');
-    connectionsLayer.appendChild(arrow);
   }
 
-  function redrawConnectionsForNode() {
-    drawAllConnections();
+  function redrawConnectionsForNode(nodeId) {
+    const allNodes = MindMap.getAllNodes();
+    const node = allNodes[nodeId];
+    if (!node) return;
+
+    // Update parent → this connection
+    if (node.parentId && allNodes[node.parentId]) {
+      drawConnection(allNodes[node.parentId], node);
+    }
+
+    // Update this → children connections
+    if (!node.collapsed) {
+      node.children.forEach(childId => {
+        const child = allNodes[childId];
+        if (child) drawConnection(node, child);
+      });
+    }
   }
 
   // ===== VIEW CONTROLS =====
