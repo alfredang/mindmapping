@@ -485,10 +485,20 @@ const Renderer = (() => {
 
   function drawAllConnections() {
     connectionsLayer.innerHTML = '';
+
+    // Add SVG defs for arrow markers
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+      <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+        <polygon points="0 0, 10 4, 0 8" fill="var(--connection-color)" />
+      </marker>
+    `;
+    connectionsLayer.appendChild(defs);
+
     const allNodes = MindMap.getAllNodes();
 
     Object.values(allNodes).forEach(node => {
-      if (node.collapsed) return;
+      if (!node.children || node.collapsed) return;
       node.children.forEach(childId => {
         const child = allNodes[childId];
         if (child) {
@@ -499,8 +509,7 @@ const Renderer = (() => {
   }
 
   function drawConnection(parent, child) {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.id = `conn-${parent.id}-${child.id}`;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
 
     const pEl = nodeElements[parent.id];
     const cEl = nodeElements[child.id];
@@ -513,16 +522,42 @@ const Renderer = (() => {
     const x2 = child.x;
     const y2 = child.y + ch / 2;
 
+    const color = child.color || '#5a5f9a';
+
+    // Draw the curved path
+    const path = document.createElementNS(SVG_NS, 'path');
+    path.id = `conn-${parent.id}-${child.id}`;
+
     const cx = (x1 + x2) / 2;
     path.setAttribute('d', `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`);
-    path.style.stroke = child.color || 'var(--connection-color)';
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width', '3');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-linecap', 'round');
 
     // Highlight if selected
     if (child.id === selectedNodeId || parent.id === selectedNodeId) {
       path.classList.add('highlight');
+      path.setAttribute('stroke-width', '4');
     }
 
     connectionsLayer.appendChild(path);
+
+    // Draw arrowhead as a small triangle at the end
+    const arrowSize = 8;
+    // Calculate angle at the endpoint of the bezier
+    // Approximate tangent using last control point (cx, y2) to (x2, y2)
+    const dx = x2 - cx;
+    const dy = y2 - y2; // horizontal approach
+    const angle = Math.atan2(y2 - y2, x2 - cx);
+    const ax = x2 - arrowSize * Math.cos(angle - 0.01);
+    const ay1 = y2 - arrowSize * 0.6;
+    const ay2 = y2 + arrowSize * 0.6;
+
+    const arrow = document.createElementNS(SVG_NS, 'polygon');
+    arrow.setAttribute('points', `${x2},${y2} ${ax},${ay1} ${ax},${ay2}`);
+    arrow.setAttribute('fill', color);
+    connectionsLayer.appendChild(arrow);
   }
 
   function redrawConnectionsForNode(nodeId) {

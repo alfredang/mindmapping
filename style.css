@@ -611,24 +611,29 @@ html, body {
 
 #connections-layer {
   position: absolute;
-  top: -5000px;
-  left: -5000px;
-  width: 10000px;
-  height: 10000px;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
   overflow: visible;
   pointer-events: none;
+  z-index: 0;
 }
 
 #connections-layer path {
   fill: none;
   stroke: var(--connection-color);
-  stroke-width: 2.5;
+  stroke-width: 3;
   stroke-linecap: round;
   transition: stroke 0.2s, stroke-width 0.2s;
 }
 #connections-layer path.highlight {
   stroke: var(--connection-highlight);
-  stroke-width: 3;
+  stroke-width: 4;
+}
+
+#connections-layer .arrow-marker {
+  fill: var(--connection-color);
 }
 
 #nodes-layer {
