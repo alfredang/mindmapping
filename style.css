@@ -18,8 +18,8 @@
   --node-border: #3a3f5c;
   --node-selected: #6366f1;
   --node-hover: #252a4a;
-  --connection-color: #5a5f9a;
-  --connection-highlight: #818cf8;
+  --connection-color: rgba(255, 255, 255, 0.6);
+  --connection-highlight: rgba(255, 255, 255, 0.9);
   --toolbar-bg: #1a1a2eee;
   --topbar-bg: #0f0f1af0;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
@@ -47,11 +47,11 @@
   --accent-secondary: #8b5cf6;
   --accent-glow: rgba(99, 102, 241, 0.2);
   --node-bg: #ffffff;
-  --node-border: #dddde8;
+  --node-border: #c0c0d0;
   --node-selected: #6366f1;
-  --node-hover: #f5f5ff;
-  --connection-color: #9090b0;
-  --connection-highlight: #4f46e5;
+  --node-hover: #f0f0ff;
+  --connection-color: rgba(0, 0, 0, 0.5);
+  --connection-highlight: rgba(0, 0, 0, 0.8);
   --toolbar-bg: #ffffffee;
   --topbar-bg: #f0f2f5f0;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
@@ -625,7 +625,7 @@ html, body {
   stroke: var(--connection-color);
   stroke-width: 3;
   stroke-linecap: round;
-  transition: stroke 0.2s, stroke-width 0.2s;
+  /* no transition — prevents ghost traces during drag */
 }
 #connections-layer path.highlight {
   stroke: var(--connection-highlight);

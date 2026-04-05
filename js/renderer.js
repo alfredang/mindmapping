@@ -522,66 +522,38 @@ const Renderer = (() => {
     const x2 = child.x;
     const y2 = child.y + ch / 2;
 
-    const color = child.color || '#5a5f9a';
-
+    // Use CSS variable for connection color (white in dark mode, dark in light)
     // Draw the curved path
     const path = document.createElementNS(SVG_NS, 'path');
     path.id = `conn-${parent.id}-${child.id}`;
 
     const cx = (x1 + x2) / 2;
     path.setAttribute('d', `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`);
-    path.setAttribute('stroke', color);
-    path.setAttribute('stroke-width', '3');
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke-linecap', 'round');
 
     // Highlight if selected
     if (child.id === selectedNodeId || parent.id === selectedNodeId) {
       path.classList.add('highlight');
-      path.setAttribute('stroke-width', '4');
     }
 
     connectionsLayer.appendChild(path);
 
     // Draw arrowhead as a small triangle at the end
     const arrowSize = 8;
-    // Calculate angle at the endpoint of the bezier
-    // Approximate tangent using last control point (cx, y2) to (x2, y2)
-    const dx = x2 - cx;
-    const dy = y2 - y2; // horizontal approach
-    const angle = Math.atan2(y2 - y2, x2 - cx);
-    const ax = x2 - arrowSize * Math.cos(angle - 0.01);
+    const ax = x2 - arrowSize;
     const ay1 = y2 - arrowSize * 0.6;
     const ay2 = y2 + arrowSize * 0.6;
 
     const arrow = document.createElementNS(SVG_NS, 'polygon');
+    arrow.id = `arrow-${parent.id}-${child.id}`;
     arrow.setAttribute('points', `${x2},${y2} ${ax},${ay1} ${ax},${ay2}`);
-    arrow.setAttribute('fill', color);
+    arrow.setAttribute('class', 'arrow-marker');
     connectionsLayer.appendChild(arrow);
   }
 
-  function redrawConnectionsForNode(nodeId) {
-    // Remove old connections involving this node and redraw
-    const allNodes = MindMap.getAllNodes();
-    const node = allNodes[nodeId];
-    if (!node) return;
-
-    // Remove connections from parent to this node
-    const existing = connectionsLayer.querySelectorAll(`[id$="-${nodeId}"], [id^="conn-${nodeId}-"]`);
-    existing.forEach(el => el.remove());
-
-    // Redraw parent → this
-    if (node.parentId && allNodes[node.parentId]) {
-      drawConnection(allNodes[node.parentId], node);
-    }
-
-    // Redraw this → children
-    if (!node.collapsed) {
-      node.children.forEach(childId => {
-        const child = allNodes[childId];
-        if (child) drawConnection(node, child);
-      });
-    }
+  function redrawConnectionsForNode() {
+    drawAllConnections();
   }
 
   // ===== VIEW CONTROLS =====
