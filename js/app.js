@@ -97,6 +97,7 @@ const App = (() => {
         Collaboration.disconnect();
       }
       currentRoomId = null;
+      hideQRPanel();
       // Clear URL params
       window.history.replaceState({}, '', window.location.pathname);
       showLanding();
@@ -111,14 +112,22 @@ const App = (() => {
     document.getElementById('map-name').textContent = name;
 
     showWorkspace();
-    Renderer.renderAll();
-    Renderer.fitView();
+
+    // Defer rendering to allow DOM layout to complete
+    requestAnimationFrame(() => {
+      Renderer.renderAll();
+      // Double-raf to ensure node dimensions are computed before fitView
+      requestAnimationFrame(() => {
+        Renderer.fitView();
+      });
+    });
 
     // Try to create a collaborative room
     if (Collaboration.getIsConnected()) {
       currentRoomId = Collaboration.createRoom(name);
       if (currentRoomId) {
         updateRoomUI(currentRoomId);
+        showQRPanel(currentRoomId);
         // Update URL
         const url = new URL(window.location);
         url.searchParams.set('room', currentRoomId);
@@ -157,8 +166,15 @@ const App = (() => {
       document.getElementById('map-name').textContent = rootNode ? rootNode.text : 'Mind Map';
 
       updateRoomUI(roomId);
-      Renderer.renderAll();
-      Renderer.fitView();
+      showQRPanel(roomId);
+
+      // Defer rendering to allow DOM layout
+      requestAnimationFrame(() => {
+        Renderer.renderAll();
+        requestAnimationFrame(() => {
+          Renderer.fitView();
+        });
+      });
       History.clear();
 
       // Update URL
@@ -194,9 +210,53 @@ const App = (() => {
     document.getElementById('collab-status').classList.add('hidden');
 
     showWorkspace();
-    Renderer.renderAll();
-    Renderer.fitView();
+    requestAnimationFrame(() => {
+      Renderer.renderAll();
+      requestAnimationFrame(() => {
+        Renderer.fitView();
+      });
+    });
     History.clear();
+  }
+
+  // ===== QR Code Sidebar Panel =====
+
+  function showQRPanel(roomId) {
+    const panel = document.getElementById('qr-panel');
+    if (!panel) return;
+    panel.classList.remove('hidden');
+
+    const roomUrl = window.location.origin + window.location.pathname + '?room=' + roomId;
+
+    document.getElementById('qr-panel-code').textContent = roomId;
+    document.getElementById('qr-panel-link').value = roomUrl;
+
+    // Generate QR code
+    const qrDiv = document.getElementById('qr-panel-qr');
+    qrDiv.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrDiv, {
+        text: roomUrl,
+        width: 140,
+        height: 140,
+        colorDark: '#1a1a2e',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    }
+
+    // Copy buttons
+    document.getElementById('qr-panel-copy-code').onclick = () => {
+      navigator.clipboard.writeText(roomId).then(() => Utils.showToast('Room code copied!'));
+    };
+    document.getElementById('qr-panel-copy-link').onclick = () => {
+      navigator.clipboard.writeText(roomUrl).then(() => Utils.showToast('Link copied!'));
+    };
+  }
+
+  function hideQRPanel() {
+    const panel = document.getElementById('qr-panel');
+    if (panel) panel.classList.add('hidden');
   }
 
   // ===== Room UI Updates =====
