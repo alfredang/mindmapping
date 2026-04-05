@@ -14,17 +14,10 @@
  */
 
 const Collaboration = (() => {
-  // ===== PASTE YOUR FIREBASE CONFIG HERE =====
-  const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAsGQa-Q54Myh9ZQ2ButUIaTemJVdhLFEE",
-    authDomain: "mindmapping-f9d6b.firebaseapp.com",
-    databaseURL: "https://mindmapping-f9d6b-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "mindmapping-f9d6b",
-    storageBucket: "mindmapping-f9d6b.firebasestorage.app",
-    messagingSenderId: "399212343345",
-    appId: "1:399212343345:web:53225f0bbeacb72800a510",
-  };
-  // ============================================
+  // Firebase config is loaded from firebase-config.js (gitignored)
+  // or injected at build time by GitHub Actions from repository secrets.
+  // See README for setup instructions.
+  const FIREBASE_CONFIG = window.FIREBASE_CONFIG || {};
 
   let db = null;
   let roomRef = null;
@@ -49,10 +42,10 @@ const Collaboration = (() => {
     userName = 'User ' + userId.slice(0, 4);
     userColor = PRESENCE_COLORS[Math.floor(Math.random() * PRESENCE_COLORS.length)];
 
-    // Check if Firebase is configured (not placeholder values)
-    if (FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') {
+    // Check if Firebase config was loaded
+    if (!FIREBASE_CONFIG.apiKey) {
       console.log('[Collaboration] Firebase not configured — running in offline mode.');
-      console.log('[Collaboration] See collaboration.js for setup instructions.');
+      console.log('[Collaboration] Create firebase-config.js or set GitHub secrets. See README.');
       return false;
     }
 
@@ -262,7 +255,7 @@ const Collaboration = (() => {
 
   function getRoomId() { return roomId; }
   function getUserId() { return userId; }
-  function isFirebaseConfigured() { return FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY'; }
+  function isFirebaseConfigured() { return !!FIREBASE_CONFIG.apiKey; }
   function getIsConnected() { return isConnected; }
 
   return {
